@@ -32,20 +32,14 @@ func main() {
 	}
 
 	request := strings.Split(string(buffer[:n]), "\r\n")
-	requestLine := strings.Split(request[0], " ")
+	statusLine := strings.Split(request[0], " ")
 
-	if requestLine[1] == "/" {
-		_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-		if err != nil {
-			fmt.Println("Error writing response: ", err.Error())
-			return
-		}
+	if statusLine[1] == "/" {
+		sendHttpResponse(conn, "", 200)
+	} else if strings.HasPrefix(statusLine[1], "/echo") {
+		sendHttpResponse(conn, statusLine[1][6:], 200)
 	} else {
-		_, err = conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
-		if err != nil {
-			fmt.Println("Error writing response: ", err.Error())
-			return
-		}
+		sendHttpResponse(conn, "", 404)
 	}
 	fmt.Println("Response sent and server closed!")
 }
