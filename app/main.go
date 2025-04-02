@@ -43,6 +43,7 @@ func handleConnection(conn net.Conn) {
 				response = generateResponse(404, make(map[string]string), []byte("Not Found"))
 			} else {
 				response = generateResponse(200, map[string]string{"Content-Type": "application/octet-stream"}, file)
+				fmt.Println(response.headers)
 			}
 			sendResponse(conn, response)
 		}

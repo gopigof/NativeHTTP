@@ -32,11 +32,10 @@ func generateResponse(responseCode int, headers map[string]string, requestBody [
 		resp.responsePhrase = reasonPhrase
 		resp.protocol = "HTTP/1.1"
 
-		if headers != nil {
-			headers = make(Header)
-		}
 		resp.headers = headers
-		resp.headers["Content-Type"] = "text/plain"
+		if _, exists := headers["Content-Type"]; !exists {
+			resp.headers["Content-Type"] = "text/plain"
+		}
 		resp.responseBody = requestBody
 		return &resp
 	}
