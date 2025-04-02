@@ -16,7 +16,7 @@ type Response struct {
 	// headers
 	headers Header
 
-	responseBody string
+	responseBody []byte
 }
 
 var reasonPhraseMap = map[int]string{
@@ -24,7 +24,7 @@ var reasonPhraseMap = map[int]string{
 	404: "Not Found",
 }
 
-func generateResponse(responseCode int, headers map[string]string, requestBody string) *Response {
+func generateResponse(responseCode int, headers map[string]string, requestBody []byte) *Response {
 	resp := Response{}
 
 	if reasonPhrase, exists := reasonPhraseMap[responseCode]; exists {
@@ -49,7 +49,7 @@ func sendResponse(conn net.Conn, resp *Response) {
 
 	fmt.Fprintf(writer, "%s %d %s\r\n", resp.protocol, resp.statusCode, resp.responsePhrase)
 
-	if resp.responseBody != "" {
+	if len(resp.responseBody) > 0 {
 		resp.headers["Content-Length"] = strconv.Itoa(len(resp.responseBody))
 	}
 	for key, value := range resp.headers {
@@ -57,8 +57,8 @@ func sendResponse(conn net.Conn, resp *Response) {
 	}
 	fmt.Fprintf(writer, "\r\n")
 
-	if resp.responseBody != "" {
-		writer.WriteString(resp.responseBody)
+	if len(resp.responseBody) > 0 {
+		writer.Write(resp.responseBody)
 	}
 	writer.Flush()
 }
