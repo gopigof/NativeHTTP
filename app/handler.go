@@ -1,68 +1,37 @@
 package main
 
-import (
-	"fmt"
-	"os"
-	"strconv"
-)
-
-type Handlers struct{}
+type Handlers struct {
+	req *Request
+}
 
 func NewHandlers() *Handlers {
 	return &Handlers{}
 }
 
-func (h *Handlers) RegisterRoutes(router *Router) {
-	router.Add("GET", "/", h.HomeHandler, true)
-	router.Add("GET", "/echo/", h.EchoHandler, false)
-	router.Add("GET", "/user-agent", h.UserAgentHandler, true)
-	router.Add("GET", "/files", h.FilesHandler, false)
-	router.Add("POST", "/files", h.FilesUploadHandler, false)
+func (ctx *RequestContext) RegisterRoutes(router *Router) {
+	router.Add("GET", "/", HomeHandler, true)
+	router.Add("GET", "/echo/", EchoHandler, false)
+	router.Add("GET", "/user-agent", UserAgentHandler, true)
+	router.Add("GET", "/files", FilesHandler, false)
+	router.Add("POST", "/files", FilesUploadHandler, false)
 }
 
-func (h *Handlers) HomeHandler(req *Request) *Response {
-	return generateResponse(200, make(map[string]string), make([]byte, 0))
+func (ctx *RequestContext) ok(body []byte) *Response {
+	return generateResponse(ctx.Request, 200, make(map[string]string), body)
 }
 
-func (h *Handlers) EchoHandler(req *Request) *Response {
-	response := generateResponse(200, make(map[string]string), make([]byte, 0))
-	response.responseBody = []byte(req.uri[6:])
-	return response
+func (ctx *RequestContext) okWithHeaders(headers map[string]string, body []byte) *Response {
+	return generateResponse(ctx.Request, 200, headers, body)
 }
 
-func (h *Handlers) UserAgentHandler(req *Request) *Response {
-	response := generateResponse(200, make(map[string]string), make([]byte, 0))
-	response.responseBody = []byte(req.headers["User-Agent"])
-	return response
+func (ctx *RequestContext) created() *Response {
+	return generateResponse(ctx.Request, 201, make(map[string]string), make([]byte, 0))
 }
 
-func (h *Handlers) FilesHandler(req *Request) *Response {
-	directory := os.Args[2]
-	filename := req.uri[7:]
-	file, err := readFile(directory, filename)
-	var response *Response
-
-	if err != nil {
-		response = generateResponse(404, make(map[string]string), []byte("Not Found"))
-	} else {
-		response = generateResponse(200, map[string]string{"Content-Type": "application/octet-stream"}, file)
-		fmt.Println(response.headers)
-	}
-	return response
+func (ctx *RequestContext) badRequest(message string) *Response {
+	return generateResponse(ctx.Request, 400, make(map[string]string), []byte(message))
 }
 
-func (h *Handlers) FilesUploadHandler(req *Request) *Response {
-	if req.headers["Content-Type"] != "application/octet-stream" {
-		return generateResponse(400, make(map[string]string), []byte("Bad Request"))
-	}
-
-	directory := os.Args[2]
-	filename := req.uri[7:]
-	contentLength, _ := strconv.Atoi(req.headers["Content-Length"])
-
-	err := writeFile(directory, filename, req.requestBody[:contentLength])
-	if err != nil {
-		return generateResponse(400, make(map[string]string), []byte("Bad Request"))
-	}
-	return generateResponse(201, make(map[string]string), make([]byte, 0))
+func (ctx *RequestContext) notFound() *Response {
+	return generateResponse(ctx.Request, 404, make(map[string]string), []byte("Not Found"))
 }

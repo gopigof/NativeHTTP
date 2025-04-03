@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 )
 
 type Response struct {
@@ -25,7 +26,7 @@ var reasonPhraseMap = map[int]string{
 	404: "Not Found",
 }
 
-func generateResponse(responseCode int, headers map[string]string, requestBody []byte) *Response {
+func generateResponse(req *Request, responseCode int, headers map[string]string, requestBody []byte) *Response {
 	resp := Response{}
 
 	if reasonPhrase, exists := reasonPhraseMap[responseCode]; exists {
@@ -34,8 +35,14 @@ func generateResponse(responseCode int, headers map[string]string, requestBody [
 		resp.protocol = "HTTP/1.1"
 
 		resp.headers = headers
+
+		// set default Content-Type
 		if _, exists := headers["Content-Type"]; !exists {
 			resp.headers["Content-Type"] = "text/plain"
+		}
+		// check Encoding
+		if encoding, exists := req.headers["Accept-Encoding"]; exists && strings.TrimSpace(encoding) == "gzip" {
+			resp.headers["Content-Encoding"] = encoding
 		}
 		resp.responseBody = requestBody
 		return &resp
@@ -61,8 +68,4 @@ func sendResponse(conn net.Conn, resp *Response) {
 		writer.Write(resp.responseBody)
 	}
 	writer.Flush()
-}
-
-func createNotFoundResponse() *Response {
-	return generateResponse(404, make(map[string]string), nil)
 }
