@@ -21,6 +21,7 @@ type Response struct {
 
 var reasonPhraseMap = map[int]string{
 	200: "OK",
+	201: "Created",
 	404: "Not Found",
 }
 
@@ -60,4 +61,8 @@ func sendResponse(conn net.Conn, resp *Response) {
 		writer.Write(resp.responseBody)
 	}
 	writer.Flush()
+}
+
+func createNotFoundResponse() *Response {
+	return generateResponse(404, make(map[string]string), nil)
 }

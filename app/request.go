@@ -20,7 +20,7 @@ type Request struct {
 	headers Header
 
 	// request body
-	requestBody string
+	requestBody []byte
 }
 
 func parseRequest(buff *bufio.Reader) *Request {
@@ -72,6 +72,6 @@ func parseRequest(buff *bufio.Reader) *Request {
 			}
 		}
 	}
-	req.requestBody = string(body)
+	req.requestBody = body
 	return req
 }
