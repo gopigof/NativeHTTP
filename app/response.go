@@ -2,6 +2,9 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"compress/gzip"
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -26,7 +29,7 @@ var reasonPhraseMap = map[int]string{
 	404: "Not Found",
 }
 
-func generateResponse(req *Request, responseCode int, headers map[string]string, requestBody []byte) *Response {
+func generateResponse(req *Request, responseCode int, headers map[string]string, responseBody []byte) *Response {
 	resp := Response{}
 
 	if reasonPhrase, exists := reasonPhraseMap[responseCode]; exists {
@@ -41,10 +44,17 @@ func generateResponse(req *Request, responseCode int, headers map[string]string,
 			resp.headers["Content-Type"] = "text/plain"
 		}
 		// check Encoding
-		if encoding, exists := req.headers["Accept-Encoding"]; exists && strings.TrimSpace(encoding) == "gzip" {
-			resp.headers["Content-Encoding"] = encoding
+		responseEncodingTypes := filterSupportedEncodingTypes(req.headers["Accept-Encoding"])
+		if responseEncodingTypes != "" {
+			encodedResponse, err := encode(responseBody, responseEncodingTypes)
+			if err != nil {
+				fmt.Println("Error encoding response: ", err)
+			}
+			resp.responseBody = encodedResponse
+			resp.headers["Content-Encoding"] = responseEncodingTypes
+		} else {
+			resp.responseBody = responseBody
 		}
-		resp.responseBody = requestBody
 		return &resp
 	}
 	fmt.Println("Unsupported response code")
@@ -68,4 +78,19 @@ func sendResponse(conn net.Conn, resp *Response) {
 		writer.Write(resp.responseBody)
 	}
 	writer.Flush()
+}
+
+func encode(responseBody []byte, supportedEncodings string) ([]byte, error) {
+	if strings.Contains(supportedEncodings, "gzip") {
+		var b bytes.Buffer
+		gz := gzip.NewWriter(&b)
+		if _, err := gz.Write(responseBody); err != nil {
+			return nil, err
+		}
+		if err := gz.Flush(); err != nil {
+			return nil, err
+		}
+		return b.Bytes(), nil
+	}
+	return nil, errors.New("unsupported encoding format")
 }

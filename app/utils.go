@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func readFile(directory string, filename string) ([]byte, error) {
@@ -33,4 +34,23 @@ func logRequest(req *Request) {
 	//for key, value := range req.headers {
 	//	fmt.Printf("  %s: %s\n", key, value)
 	//}
+}
+
+func filterSupportedEncodingTypes(reqEncodings string) string {
+	SupportedEncodings := map[string]bool{"gzip": true}
+	validEncodings := map[string]bool{}
+
+	if reqEncodings == "" {
+		return ""
+	}
+	for _, enc := range strings.Split(reqEncodings, ",") {
+		if _, exists := SupportedEncodings[strings.TrimSpace(enc)]; exists {
+			validEncodings[strings.TrimSpace(enc)] = true
+		}
+	}
+	validEncodingsArr := make([]string, 0, len(validEncodings))
+	for enc := range validEncodings {
+		validEncodingsArr = append(validEncodingsArr, enc)
+	}
+	return strings.Join(validEncodingsArr, ", ")
 }
