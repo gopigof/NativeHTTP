@@ -17,8 +17,8 @@ set -e # Exit early if any commands fail
   go build -o /tmp/codecrafters-build-http-server-go app/*.go
 )
 
-# Copied from .codecrafters/run.sh
+# Copied from .codecrafters/server.sh
 #
 # - Edit this to change how your program runs locally
-# - Edit .codecrafters/run.sh to change how your program runs remotely
+# - Edit .codecrafters/server.sh to change how your program runs remotely
 exec /tmp/codecrafters-build-http-server-go "$@"

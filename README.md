@@ -3,7 +3,7 @@
 This project is a custom HTTP/1.1 server written in Go that handles concurrent connections, parses HTTP requests, and routes them to appropriate handlers. It features a modular design with clean separation between routing logic and request handling.
 
 ## Usage
-- Starting the Server: ```./your_program.sh --directory <path_to_dir>```
+- Starting the Server: ```./server.sh --directory <path_to_dir>```
 - directory is the file directory for file operations
 
 ## Implemented Routes
