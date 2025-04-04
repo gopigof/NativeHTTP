@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
-	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -66,6 +65,7 @@ func sendResponse(conn net.Conn, resp *Response) {
 
 	fmt.Fprintf(writer, "%s %d %s\r\n", resp.protocol, resp.statusCode, resp.responsePhrase)
 
+	fmt.Println(resp.responseBody)
 	if len(resp.responseBody) > 0 {
 		resp.headers["Content-Length"] = strconv.Itoa(len(resp.responseBody))
 	}
@@ -81,16 +81,21 @@ func sendResponse(conn net.Conn, resp *Response) {
 }
 
 func encode(responseBody []byte, supportedEncodings string) ([]byte, error) {
+	var compressedBuffer bytes.Buffer
+
 	if strings.Contains(supportedEncodings, "gzip") {
-		var b bytes.Buffer
-		gz := gzip.NewWriter(&b)
-		if _, err := gz.Write(responseBody); err != nil {
+		gzipWriter, err := gzip.NewWriterLevel(&compressedBuffer, gzip.BestCompression)
+		if err != nil {
 			return nil, err
 		}
-		if err := gz.Flush(); err != nil {
+		_, err = gzipWriter.Write(responseBody)
+		if err != nil {
 			return nil, err
 		}
-		return b.Bytes(), nil
+		if err := gzipWriter.Close(); err != nil {
+			return nil, err
+		}
+		return compressedBuffer.Bytes(), nil
 	}
-	return nil, errors.New("unsupported encoding format")
+	return make([]byte, 0), nil
 }
