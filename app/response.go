@@ -65,7 +65,6 @@ func sendResponse(conn net.Conn, resp *Response) {
 
 	fmt.Fprintf(writer, "%s %d %s\r\n", resp.protocol, resp.statusCode, resp.responsePhrase)
 
-	fmt.Println(resp.responseBody)
 	if len(resp.responseBody) > 0 {
 		resp.headers["Content-Length"] = strconv.Itoa(len(resp.responseBody))
 	}

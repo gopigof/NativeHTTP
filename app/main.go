@@ -3,19 +3,39 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"os"
+	"time"
 )
 
-func handleConnection(conn net.Conn, router *Router) {
-	defer conn.Close()
-
+func handleConnection(conn net.Conn, router *Router) bool {
+	err := conn.SetReadDeadline(time.Now().Add(time.Second * 2))
+	if err != nil {
+		fmt.Println("Connection expired after 2s: ", err)
+		return false
+	}
 	reader := bufio.NewReader(conn)
-	parsedRequest := parseRequest(reader)
-	logRequest(parsedRequest)
+	parsedRequest, err := parseRequest(reader)
+	if err != nil {
+		if err == io.EOF {
+			return false
+		}
+	}
 
 	response := router.RouteRequests(parsedRequest)
 	sendResponse(conn, response)
+	logRequest(parsedRequest)
+	return parsedRequest.headers["Connection"] == "keep-alive"
+}
+
+func handlePersistentConnection(conn net.Conn, router *Router) {
+	defer conn.Close()
+
+	keepAlive := true
+	for keepAlive {
+		keepAlive = handleConnection(conn, router)
+	}
 }
 
 func main() {
@@ -42,6 +62,6 @@ func main() {
 			fmt.Println("Error accepting connection: ", err)
 			continue
 		}
-		go handleConnection(conn, router)
+		go handlePersistentConnection(conn, router)
 	}
 }

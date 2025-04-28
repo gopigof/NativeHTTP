@@ -23,13 +23,13 @@ type Request struct {
 	requestBody []byte
 }
 
-func parseRequest(buff *bufio.Reader) *Request {
+func parseRequest(buff *bufio.Reader) (*Request, error) {
 	req := new(Request)
 
 	requestLine, err := buff.ReadString('\n')
 	if err != nil {
 		fmt.Println("Error reading request - Request Line: ", err)
-		return nil
+		return nil, err
 	}
 	parts := strings.Split(requestLine, " ")
 	if len(parts) < 3 {
@@ -45,7 +45,7 @@ func parseRequest(buff *bufio.Reader) *Request {
 		line, err := buff.ReadString('\n')
 		if err != nil {
 			fmt.Println("Error reading request - Header: ", err)
-			return nil
+			return nil, err
 		}
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -59,6 +59,10 @@ func parseRequest(buff *bufio.Reader) *Request {
 			req.headers[header] = value
 		}
 	}
+	// Populate default headers
+	if _, exists := req.headers["Connection"]; !exists {
+		req.headers["Connection"] = "keep-alive"
+	}
 
 	var body []byte
 	if contentLength, ok := req.headers["Content-Length"]; ok {
@@ -68,10 +72,10 @@ func parseRequest(buff *bufio.Reader) *Request {
 			_, err = io.ReadFull(buff, body)
 			if err != nil {
 				fmt.Println("Error reading request - Body: ", err)
-				return nil
+				return nil, err
 			}
 		}
 	}
 	req.requestBody = body
-	return req
+	return req, nil
 }
