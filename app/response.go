@@ -38,9 +38,14 @@ func generateResponse(req *Request, responseCode int, headers map[string]string,
 
 		resp.headers = headers
 
+		// TODO: Copy default headers from request to response
 		// set default Content-Type
 		if _, exists := headers["Content-Type"]; !exists {
 			resp.headers["Content-Type"] = "text/plain"
+		}
+		// set Connection headers
+		if connHeader, exists := req.headers["Connection"]; exists {
+			resp.headers["Connection"] = connHeader
 		}
 		// check Encoding
 		responseEncodingTypes := filterSupportedEncodingTypes(req.headers["Accept-Encoding"])
